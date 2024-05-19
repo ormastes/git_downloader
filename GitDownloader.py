@@ -161,6 +161,7 @@ class BranchTab (Tab):
                     # terminal command
                     command = ["cd", dir_name, "&&", "git", "fetch", "--unshallow", "-v", "&&", "git", "submodule", "init", "&&", "git", "submodule", "update", "--recursive"]
                     this.execute(command, handleUnshallowResult)
+                    exit(0)
         def dummyHandleResult(resultCode):
             pass
         process = this.execute(command, dummyHandleResult)
