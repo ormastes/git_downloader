@@ -6,11 +6,24 @@ import subprocess
 from datetime import datetime
 from tkinter import messagebox
 import threading
+import sys
 
 # Get the directory of the current source file
-dir_of_cur = os.path.dirname(os.path.abspath(__file__))
+#dir_of_cur = os.path.dirname(os.path.abspath(__file__))
 
 myWindow = None
+GIT_DOWNLOADER_TEMP_DIR = "C:/Windows/Temp/git_downloader"
+# get windows %APPDATA% directory
+APP_DATA_DIR = os.getenv('APPDATA')
+WIN_APP_DATA_DIR = APP_DATA_DIR+"/git_downloader"
+if not os.path.exists(WIN_APP_DATA_DIR):
+    os.makedirs(WIN_APP_DATA_DIR)
+
+# print current working directory
+print(os.getcwd())
+# print first argument if exists
+if len(sys.argv) > 1:
+    print(sys.argv[1])
 
 class Tab:
     def __init__(self, tab_control, tab_name, button_name1, listener1, text_default1, button_name2=None, listener2=None, text_default2=None):
@@ -133,7 +146,7 @@ class BranchTab (Tab):
             if resultCode != 0:
                 tk.messagebox.showerror("Error", "There was an error cloning the repository")
             else:
-                with shelve.open(dir_of_cur + '/data', writeback=True) as data:
+                with shelve.open(WIN_APP_DATA_DIR + '/data', writeback=True) as data:
                     data['branch'] = branch
                 # ask remain branch download or not by dialog
                 if tk.messagebox.askyesno("Question", "Do you want to download another branch?"):
@@ -160,7 +173,7 @@ class BranchTab (Tab):
         filter = this.filterText.get().strip()
         this.branchList.delete(0, tk.END)
         this.updateBranch()
-        with shelve.open(dir_of_cur + '/data') as data:
+        with shelve.open(WIN_APP_DATA_DIR + '/data') as data:
             data['filter'] = filter
 
 
@@ -174,7 +187,7 @@ class UrlTab (Tab):
         for a_url in urls:
             self.urlListBox.insert(tk.END, a_url)
     def updateUrl(self, url):
-        with shelve.open(dir_of_cur + '/data', writeback=True) as data:
+        with shelve.open(WIN_APP_DATA_DIR + '/data', writeback=True) as data:
             data['url'] = url
             if url not in data['urls']:
                 data['urls'].append(url)
@@ -187,7 +200,7 @@ class UrlTab (Tab):
         url = this.urlText.get()
         # terminal command
         # temp dir with year, month, day, hour, minute, second
-        git_temp_dir = dir_of_cur + "/repo_" + datetime.now().strftime("%Y%m%d%H%M%S")+"/.git"
+        git_temp_dir = GIT_DOWNLOADER_TEMP_DIR+ "/repo_" + datetime.now().strftime("%Y%m%d%H%M%S")+"/.git"+''
         command = ["git", "clone", "-v","--bare", "--filter=blob:none", url, git_temp_dir]
         def handleBareCloneResult(resultCode):
             if resultCode != 0:
@@ -234,9 +247,9 @@ class Window:
         HEIGHT = 400
 
         # delete current dir's dir which start with "rep_"
-        #os.system("rd /s /q " + dir_of_cur + "\\repo_*")
+
         try:
-            result = subprocess.check_output(["cd", dir_of_cur, "&&", "dir", "repo_*"], shell=True)
+            result = subprocess.check_output(["cd", GIT_DOWNLOADER_TEMP_DIR, "&&", "dir", "repo_*"], shell=True)
 
         except subprocess.CalledProcessError as e:
             result = None
@@ -247,7 +260,7 @@ class Window:
             for l in line:
                 name = l.split(" ")[-1]
                 if name.startswith("repo_"):
-                    os.system("rd /s /q " + dir_of_cur + "\\" + name)
+                    os.system("rd /s /q " + GIT_DOWNLOADER_TEMP_DIR + "\\" + name)
 
         # Create a new window
         self.window = tk.Tk()
@@ -265,14 +278,14 @@ class Window:
         self.window.geometry(str(WIDTH) + "x" + str(HEIGHT))
 
         # Check data file exist and create it if not
-        if not os.path.exists(dir_of_cur + '/data.dat'):
-            with shelve.open(dir_of_cur + '/data', writeback=True) as data:
+        if not os.path.exists(WIN_APP_DATA_DIR + '/data.dat'):
+            with shelve.open(WIN_APP_DATA_DIR + '/data', writeback=True) as data:
                 data['urls'] = []
                 data['url'] = ''
                 data['filter'] = ''
                 data['branch'] = ''
 
-        with shelve.open(dir_of_cur + '/data', 'r') as data:
+        with shelve.open(WIN_APP_DATA_DIR + '/data', 'r') as data:
             urls = data['urls']
             url = data['url']
             filter = data['filter']
